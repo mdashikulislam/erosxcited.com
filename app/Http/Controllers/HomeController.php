@@ -230,10 +230,10 @@ class HomeController extends Controller
                 ->whereRelation('plans', 'status', '1')
                 ->whereFreeSubscription('no')
                 ->whereHideProfile('no')
-                ->whereNotIn('users.id', $blockedUsers) // Ensure blocked users are excluded
+                ->whereNotIn('users.id', $blockedUsers)
                 ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
-                ->orWhere(function ($query) use ($blockedUsers) {
-                    $query->where('users.status', 'active')
+                ->orWhere(function ($q) use ($blockedUsers,$query) {
+                    $q->where('users.status', 'active')
                         ->whereVerifiedId('yes')
                         ->where('id', '<>', config('settings.hide_admin_profile') == 'on' ? 1 : 0)
                         ->whereFreeSubscription('yes')
@@ -390,6 +390,7 @@ class HomeController extends Controller
                 break;
         }
 
+        $blockedUsers = auth()->user()->restrictions()->pluck('user_restricted');
         if ($type == 'free') {
             $users = User::where('users.status', 'active')
                 ->where('categories_id', 'LIKE', '%' . $category->id . '%')
@@ -397,14 +398,16 @@ class HomeController extends Controller
                 ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
                 ->whereFreeSubscription('yes')
                 ->whereHideProfile('no')
-                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%');
+                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
 
             $this->filterByGenderAge($users);
 
             $users = $users->orderBy($orderBy, 'desc')
                 ->simplePaginate(12);
-        } else {
 
+        } else {
+            // Other types (featured, active, etc.)
             $data = User::where('users.status', 'active');
 
             $whereRawFeatured = $type == 'featured' ? 'featured = "yes"' : 'users.status = "active"';
@@ -417,18 +420,22 @@ class HomeController extends Controller
                 ->whereFreeSubscription('no')
                 ->whereHideProfile('no')
                 ->whereRaw($whereRawFeatured)
-                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%');
+                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
 
             $this->filterByGenderAge($data);
 
-            $data->orWhere('users.status', 'active')
-                ->where('categories_id', 'LIKE', '%' . $category->id . '%')
-                ->whereVerifiedId('yes')
-                ->where('users.id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
-                ->whereFreeSubscription('yes')
-                ->whereHideProfile('no')
-                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
-                ->whereRaw($whereRawFeatured);
+            $data->orWhere(function ($query) use ($blockedUsers, $whereRawFeatured,$category) {
+                $query->where('users.status', 'active')
+                    ->where('categories_id', 'LIKE', '%' . $category->id . '%')
+                    ->whereVerifiedId('yes')
+                    ->where('users.id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
+                    ->whereFreeSubscription('yes')
+                    ->whereHideProfile('no')
+                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                    ->whereRaw($whereRawFeatured)
+                    ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
+            });
 
             $this->filterByGenderAge($data);
 
@@ -443,14 +450,16 @@ class HomeController extends Controller
                 $data->orWhere('subscriptions.stripe_id', '=', '')
                     ->where('ends_at', '>=', now())
                     ->where('categories_id', 'LIKE', '%' . $category->id . '%')
-                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%');
+                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                    ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
 
                 $this->filterByGenderAge($data);
 
                 $data->orWhere('subscriptions.stripe_id', '<>', '')
                     ->where('stripe_status', 'active')
                     ->where('categories_id', 'LIKE', '%' . $category->id . '%')
-                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%');
+                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                    ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
 
                 $this->filterByGenderAge($data);
 
@@ -458,18 +467,19 @@ class HomeController extends Controller
                     ->where('ends_at', '>=', now())
                     ->where('stripe_status', 'canceled')
                     ->where('categories_id', 'LIKE', '%' . $category->id . '%')
-                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%');
+                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                    ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
 
                 $this->filterByGenderAge($data);
 
                 $data->orWhere('subscriptions.stripe_id', '=', '')
                     ->whereFree('yes')
                     ->where('categories_id', 'LIKE', '%' . $category->id . '%')
-                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%');
+                    ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                    ->whereNotIn('users.id', $blockedUsers); // Ensure blocked users are excluded
 
                 $this->filterByGenderAge($data);
             }
-
 
             $users = $data->groupBy('users.id')
                 ->orderBy(\DB::raw($orderBy), 'DESC')
@@ -485,10 +495,10 @@ class HomeController extends Controller
                     'users.free_subscription',
                     'users.featured'
                 )
-                ->with(['media' => fn($q) => $q->select('type')
-                ])
+                ->with(['media' => fn($q) => $q->select('type')])
                 ->simplePaginate(12);
         }
+
 
         if (request()->ajax()) {
             return view('includes.ajax-listing-creators', ['users' => $users])->render();
@@ -619,7 +629,11 @@ class HomeController extends Controller
         $query = $this->request->get('user');
         $data = "";
 
+        // Get the blocked users for the current logged-in user
+        $blockedUsers = auth()->user()->restrictions()->pluck('user_restricted');
+
         if ($query != '' && strlen($query) >= 2) {
+            // Build the query
             $sql = User::where('status', 'active')
                 ->where('username', 'LIKE', '%' . $query . '%')
                 ->whereVerifiedId('yes')
@@ -628,63 +642,74 @@ class HomeController extends Controller
                 ->whereFreeSubscription('no')
                 ->whereHideProfile('no')
                 ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
-                ->orWhere('name', 'LIKE', '%' . $query . '%')
-                ->whereVerifiedId('yes')
-                ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
-                ->whereRelation('plans', 'status', '1')
-                ->whereFreeSubscription('no')
-                ->whereHideProfile('no')
-                ->whereHideName('no')
-                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
-                ->orWhere('status', 'active')
-                ->where('username', 'LIKE', '%' . $query . '%')
-                ->whereVerifiedId('yes')
-                ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
-                ->whereFreeSubscription('yes')
-                ->whereHideProfile('no')
-                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
-                ->orWhere('status', 'active')
-                ->where('name', 'LIKE', '%' . $query . '%')
-                ->whereVerifiedId('yes')
-                ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
-                ->whereFreeSubscription('yes')
-                ->whereHideProfile('no')
-                ->whereHideName('no')
-                ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                ->whereNotIn('users.id', $blockedUsers)  // Exclude blocked users
+                ->orWhere(function ($q) use ($blockedUsers,$query) {
+                    $q->where('name', 'LIKE', '%' . $query . '%')
+                        ->whereVerifiedId('yes')
+                        ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
+                        ->whereRelation('plans', 'status', '1')
+                        ->whereFreeSubscription('no')
+                        ->whereHideProfile('no')
+                        ->whereHideName('no')
+                        ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                        ->whereNotIn('users.id', $blockedUsers); // Exclude blocked users
+                })
+                ->orWhere(function ($q) use ($blockedUsers,$query) {
+                    $q->where('status', 'active')
+                        ->where('username', 'LIKE', '%' . $query . '%')
+                        ->whereVerifiedId('yes')
+                        ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
+                        ->whereFreeSubscription('yes')
+                        ->whereHideProfile('no')
+                        ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                        ->whereNotIn('users.id', $blockedUsers); // Exclude blocked users
+                })
+                ->orWhere(function ($q) use ($blockedUsers,$query) {
+                    $q->where('status', 'active')
+                        ->where('name', 'LIKE', '%' . $query . '%')
+                        ->whereVerifiedId('yes')
+                        ->where('id', '<>', $this->settings->hide_admin_profile == 'on' ? 1 : 0)
+                        ->whereFreeSubscription('yes')
+                        ->whereHideProfile('no')
+                        ->whereHideName('no')
+                        ->where('blocked_countries', 'NOT LIKE', '%' . Helper::userCountry() . '%')
+                        ->whereNotIn('users.id', $blockedUsers); // Exclude blocked users
+                })
                 ->orderBy('id', 'desc')
                 ->take(4)
                 ->get();
 
+            // Check if any users were returned from the query
             if ($sql) {
                 foreach ($sql as $user) {
-
                     $name = $user->hide_name == 'yes' ? $user->username : $user->name;
                     $description = $user->profession ?: '@' . $user->username;
 
+                    // Prepare the HTML output for each user
                     $data .= '<div class="card border-0">
-  							<div class="list-group list-group-sm list-group-flush">
-                 <a href="' . url($user->username) . '" class="list-group-item list-group-item-action text-decoration-none py-2 px-3 bg-autocomplete">
-                   <div class="media">
-                    <div class="media-left mr-3 position-relative">
-                        <img class="media-object rounded-circle" src="' . Helper::getFile(config('path.avatar') . $user->avatar) . '" width="30" height="30">
+                    <div class="list-group list-group-sm list-group-flush">
+                        <a href="' . url($user->username) . '" class="list-group-item list-group-item-action text-decoration-none py-2 px-3 bg-autocomplete">
+                            <div class="media">
+                                <div class="media-left mr-3 position-relative">
+                                    <img class="media-object rounded-circle" src="' . Helper::getFile(config('path.avatar') . $user->avatar) . '" width="30" height="30">
+                                </div>
+                                <div class="media-body overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="media-heading mb-0 text-truncate">' . $name . '</h6>
+                                    </div>
+                                    <small class="text-truncate m-0 w-100 text-left d-block mt-1">' . $description . '</small>
+                                </div>
+                            </div>
+                        </a>
                     </div>
-                    <div class="media-body overflow-hidden">
-                      <div class="d-flex justify-content-between align-items-center">
-                       <h6 class="media-heading mb-0 text-truncate">
-                            ' . $name . '
-                        </h6>
-                      </div>
-  										<small class="text-truncate m-0 w-100 text-left d-block mt-1">' . $description . '</small>
-                    </div>
-                </div>
-                  </a>
-               </div>
-  					 </div>';
+                </div>';
                 }
                 return $data;
             }
         }
-    }// End Method
+    }
+
+// End Method
 
     public function refreshCreators()
     {
