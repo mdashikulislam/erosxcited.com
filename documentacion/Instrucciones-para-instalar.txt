@@ -1,0 +1,20 @@
+para instalar en modo local:
+
+1 - extre el archivo zip en tu servidor apache donde pones tus proyectos en PHP, ve a tu gestor de bases de datos y crea una nueva base de datos.
+2 - en la carpeta  documentacion encontrara el archivo SQL de la base de datos, importa ese archvio a la base de datos que creaste.
+3 - ve al codigo fuente y busca el archivo .env
+4 - donde dice APP_URL= pones la URL donde tienes instalado el sistema ejemplo: localhost/nombre-carpeta
+    donde dice DB_DATABASE= pones el nombre de la base de datos.
+    donde dice DB_USERNAME= pones el nombre de usuario de la base de datos.
+    donde dice DB_PASSWORD= pones la contraseña de la base de datos, (si su gestor de bases de datos no usa contraseña, dejas este campo vacio, lo dejas asi DB_PASSWORD=
+
+para instalar en un Hosting:
+
+1 - extre el archivo zip en tu servidor donde tienes el dominio, ve a tu gestor de bases de datos y crea una nueva base de datos.
+2 - en la carpeta  documentacion encontrara el archivo SQL de la base de datos, importa ese archvio a la base de datos que creaste.
+3 - ve al codigo fuente y busca el archivo .env
+4 - donde dice APP_URL= pones la URL donde tienes instalado el sistema ejemplo: localhost/nombre-carpeta
+    donde dice DB_DATABASE= pones el nombre de la base de datos.
+    donde dice DB_USERNAME= pones el nombre de usuario de la base de datos.
+    donde dice DB_PASSWORD= pones la contraseña de la base de datos, (si su gestor de bases de datos no usa contraseña, dejas este campo vacio, lo dejas asi DB_PASSWORD=
+
