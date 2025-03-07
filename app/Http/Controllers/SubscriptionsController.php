@@ -23,7 +23,7 @@ class SubscriptionsController extends Controller
 {
   use Traits\Functions;
 
-  public function __construct(Request $request) 
+  public function __construct(Request $request)
   {
     $this->request = $request;
   }

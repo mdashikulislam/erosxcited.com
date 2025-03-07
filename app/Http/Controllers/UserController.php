@@ -2001,8 +2001,10 @@ class UserController extends Controller
 
     public function restrictUser($id)
     {
+
         $verifyUser = User::findOrFail($id);
 
+        //return $verifyUser;
         // Avoid self restricting
         if ($verifyUser->id == auth()->id()) {
             abort(500);
@@ -2016,11 +2018,17 @@ class UserController extends Controller
         }
 
         $restrict = Restrictions::firstOrNew(['user_id' => auth()->id(), 'user_restricted' => $id]);
-
         if ($restrict->exists) {
             $restrict->delete();
         } else {
             $restrict->save();
+            $subscription = \auth()->user()->userSubscriptions()->where('stripe_price','user_'.$id)->orderByDesc('id')->firstOrFail();
+            if ($subscription){
+                $subscription->cancelled = 'yes';
+                $subscription->ends_at = now()->subHour();
+                $subscription->save();
+            }
+            session()->put('subscription_cancel', trans('general.subscription_cancel'));
         }
 
         return response()->json([

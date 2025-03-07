@@ -609,7 +609,7 @@ $(document).on('click','#avatar_file',function () {
 			   	if (result.success) {
 			   		element.parents('.card-footer').find('.comments').val('');
 			   		element.parents('.card-footer').find('.dangerAlertComments').fadeOut(1);
-					
+
 					if (result.isReply) {
 						element.parents('.card-footer').find('.wrap-comments'+result.idComment).append(result.data);
 						jQuery(".timeAgo").timeago();
@@ -659,17 +659,17 @@ $(document).on('click','#avatar_file',function () {
     $(document).on('click','.delete-replies', function(e){
 
 		e.preventDefault();
- 
+
 		var element     = $(this);
 		var id          = element.attr("data");
 		element.blur();
- 
+
 	  $.ajaxSetup({
 		 headers: {
 			 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
 		 }
 	 });
- 
+
 	swal(
 		{   title: delete_confirm,
 			text: confirm_delete_comment,
@@ -825,7 +825,7 @@ $(document).ready(function() {
 		 var input        = element.parents('.container-comments ').find('.inputComment');
 		 var inputIsReply = element.parents('.container-comments ').find('.isReply');
 		 var isReplyTo    = element.parents('.container-comments ').find('.isReplyTo');
-		 
+
 		 element.blur();
 
 	   $.ajaxSetup({
@@ -1949,7 +1949,7 @@ $(document).on('click','.refresh_creators',function (e) {
 	 var btnFreeCreators = element.parents('.filter-explorer').find('.toggleFindFreeCreators');
 
 	 var free = btnFreeCreators.hasClass('findFreeCreators') ? '?type=free' : '';
-	 
+
 	 element.removeClass('refresh_creators');
 	 btnRefresh.addClass('fa-spin');
 
@@ -2146,7 +2146,7 @@ $(document).on('click','.refresh_creators',function (e) {
 	$('.isNumber').keypress(function (event) {
         return isNumber(event, this)
 	});
-	
+
 	function isNumber(evt, element) {
 		var charCode = (evt.which) ? evt.which : event.keyCode
 		if (
@@ -2169,7 +2169,7 @@ $(document).on('click','.refresh_creators',function (e) {
 
 			var element  = $(this);
 			var commentId = element.data('id');
-			var type = element.data('type'); 
+			var type = element.data('type');
 
 			$.post(URL_BASE+"/comment/like",{ comment_id: commentId, typeComment: type }, function(data) {
 
@@ -2461,7 +2461,6 @@ $(document).on('click','.emoji',function(e) {
 $(document).on('click','#restrictUser',function(e) {
 	var element = $(this);
 	var id      = element.attr("data-user");
-
 	e.preventDefault();
 
 	element.blur();
@@ -2496,7 +2495,6 @@ $(document).on('click','#restrictUser',function(e) {
 							 url: URL_BASE+"/restrict/user/"+id,
 							 dataType: 'json',
 							 success: function(result) {
-
 								if (result.success) {
 									window.location.reload();
 								} else {
