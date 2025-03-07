@@ -183,6 +183,14 @@ class UserController extends Controller
             abort(404);
         }
 
+        // Hidden Profile from other users who restricted
+        if (auth()->check() && auth()->id() != $user->id) {
+            $restrictions = \auth()->user()->restrictions()->where('user_restricted', $user->id)->first();
+            if ($restrictions) {
+                abort(404);
+            }
+        }
+
         // Hidden Profile Blocked Countries
         if (in_array(Helper::userCountry(), $user->blockedCountries())
             && auth()->check()
@@ -2022,13 +2030,12 @@ class UserController extends Controller
             $restrict->delete();
         } else {
             $restrict->save();
-            $subscription = \auth()->user()->userSubscriptions()->where('stripe_price','user_'.$id)->orderByDesc('id')->firstOrFail();
+            $subscription = \auth()->user()->userSubscriptions()->where('stripe_price','user_'.$id)->orderByDesc('id')->first();
             if ($subscription){
                 $subscription->cancelled = 'yes';
                 $subscription->ends_at = now()->subHour();
                 $subscription->save();
             }
-            session()->put('subscription_cancel', trans('general.subscription_cancel'));
         }
 
         return response()->json([

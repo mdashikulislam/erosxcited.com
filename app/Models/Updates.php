@@ -56,7 +56,10 @@ class Updates extends Model
 	{
 		return $this->hasMany(VideoViews::class);
 	}
-
+    function scopeWithoutBlockUsers($query)
+    {
+        $query->whereNotIn('user_id',auth()->user()->restrictions()->pluck('user_restricted'));
+    }
 	public function scopeGetSelectRelations($query)
 	{
 		return $query->select('updates.id',
@@ -71,15 +74,15 @@ class Updates extends Model
                 'updates.video_views'
                 )
           ->with([
-            'creator:id,name,username,avatar,hide_name,verified_id,plan,free_subscription', 
-            'creator.plans:user_id,name,status', 
-            'media', 
+            'creator:id,name,username,avatar,hide_name,verified_id,plan,free_subscription',
+            'creator.plans:user_id,name,status',
+            'media',
             'comments:id,updates_id',
 			'likes:id,updates_id,status'
 		  ]);
 	}
 
-	
+
 	public function scopeSelectPostsFields($query)
 	{
 	  return $query->select('updates.id',
@@ -97,7 +100,7 @@ class Updates extends Model
 
 	public function scopeVerifyCountryBlocking($query)
 	{
-		$query->with(['creator' => fn ($sql) => 
+		$query->with(['creator' => fn ($sql) =>
 			$sql->where('blocked_countries', 'NOT LIKE', '%'.Helper::userCountry().'%')
 		]);
 	}

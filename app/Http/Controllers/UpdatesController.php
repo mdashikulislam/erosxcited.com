@@ -760,7 +760,7 @@ class UpdatesController extends Controller
 
     public function explore()
     {
-      $updates = Updates::verifyCountryBlocking();
+      $updates = Updates::verifyCountryBlocking()->withoutBlockUsers();
 
       // Filter by hashtag
       $updates->when(strlen(request('q')) > 2, function($q) {
@@ -790,14 +790,13 @@ class UpdatesController extends Controller
 
       // Pay Per Views User
       $payPerViewsUser = auth()->user()->payPerView()->count();
-
       return view('index.explore', [
-        'updates' => $updates, 
+        'updates' => $updates,
         'hasPages' => $updates->hasPages(),
         'users' => $users,
         'payPerViewsUser' => $payPerViewsUser ?? null
       ]);
-      
+
     }//<--- End Method
 
     // Explore Ajax Pagination
@@ -899,11 +898,11 @@ class UpdatesController extends Controller
       {
         $post = Updates::with(['videoViews'])->findOrFail($id);
         $userIP = request()->ip();
-        
+
         if (auth()->check()) {
           // Check if the registered user has already seen the video
           $viewCheckUser = $post->videoViews->where('user_id', auth()->id())->first();
-  
+
           if (! $viewCheckUser && auth()->id() != $post->user()->id) {
             $view = new VideoViews();
             $view->updates_id = $post->id;
@@ -919,7 +918,7 @@ class UpdatesController extends Controller
           $viewCheckGuest = $post->videoViews->where('user_id', 0)
           ->where('ip', $userIP)
           ->first();
-    
+
           if (! $viewCheckGuest) {
             $view = new VideoViews();
             $view->updates_id = $post->id;
