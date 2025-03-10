@@ -739,6 +739,5 @@ class HomeController extends Controller
         return view('index.creators-live', [
             'users' => $users
         ]);
-    }
-
+    }// End method creatorsBroadcastingLive
 }
