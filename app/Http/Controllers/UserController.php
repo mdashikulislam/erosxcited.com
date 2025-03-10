@@ -185,8 +185,8 @@ class UserController extends Controller
 
         // Hidden Profile from other users who restricted
         if (auth()->check() && auth()->id() != $user->id) {
-            $restrictions = \auth()->user()->restrictions()->where('user_restricted', $user->id)->first();
-            if ($restrictions) {
+            $blockedUsers = $this->blockedUser();
+            if (in_array($user->id, $blockedUsers)) {
                 abort(404);
             }
         }

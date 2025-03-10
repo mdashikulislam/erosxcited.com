@@ -218,7 +218,7 @@ class HomeController extends Controller
         }
 
         $resultShowByPage = 12;
-        $blockedUsers = auth()->user()->restrictions()->pluck('user_restricted');
+        $blockedUsers = $this->blockedUser();
 
         if (strlen($query) >= 3) {
             $title = __('general.search') . ' "' . $query . '"';
@@ -390,7 +390,7 @@ class HomeController extends Controller
                 break;
         }
 
-        $blockedUsers = auth()->user()->restrictions()->pluck('user_restricted');
+        $blockedUsers = $this->blockedUser();
         if ($type == 'free') {
             $users = User::where('users.status', 'active')
                 ->where('categories_id', 'LIKE', '%' . $category->id . '%')
@@ -630,8 +630,7 @@ class HomeController extends Controller
         $data = "";
 
         // Get the blocked users for the current logged-in user
-        $blockedUsers = auth()->user()->restrictions()->pluck('user_restricted');
-
+        $blockedUsers = $this->blockedUser();
         if ($query != '' && strlen($query) >= 2) {
             // Build the query
             $sql = User::where('status', 'active')
@@ -740,5 +739,6 @@ class HomeController extends Controller
         return view('index.creators-live', [
             'users' => $users
         ]);
-    }// End method creatorsBroadcastingLive
+    }
+
 }

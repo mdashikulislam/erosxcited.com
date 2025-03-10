@@ -38,11 +38,11 @@ use Carbon\Carbon;
 
 trait Functions
 {
-
+    use BlockedUser;
     // Users on Card Explore
     public function userExplore($type = false)
     {
-        $blockedUsers = \auth()->user()->restrictions()->pluck('user_restricted');
+        $blockedUsers = $this->blockedUser();
         if ($type) {
             return User::selectFieldsUserExplorer()->where('status', 'active')
                 ->where('id', '<>', auth()->id() ?? 0)
